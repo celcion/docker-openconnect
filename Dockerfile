@@ -10,6 +10,7 @@ RUN buildDeps=" \
 		curl \
 		g++ \
 		gawk \
+		geoip \
 		gnutls-dev \
 		gpgme \
 		krb5-dev \
@@ -22,9 +23,11 @@ RUN buildDeps=" \
 		linux-pam-dev \
 		lz4-dev \
 		make \
+		oath-toolkit-liboath \
 		oath-toolkit-libpskc \
 		p11-kit \
 		pcsc-lite-libs \
+		protobuf-c \
 		readline-dev \
 		scanelf \
 		stoken-dev \
