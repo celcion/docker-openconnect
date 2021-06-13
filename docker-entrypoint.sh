@@ -49,15 +49,6 @@ elif [[ ${TUNNEL_MODE} == "split-include" ]]; then
 	fi
 fi
 
-#export PROXY_SUPPORT=$(echo "${PROXY_SUPPORT}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
-# Check PROXY_SUPPORT env var
-#if [[ ! -z "${PROXY_SUPPORT}" ]]; then
-#	echo "$(date) [info] PROXY_SUPPORT defined as '${PROXY_SUPPORT}'"
-#else
-#	echo "$(date) [warn] PROXY_SUPPORT not defined,(via -e PROXY_SUPPORT), defaulting to 'no'"
-#	export PROXY_SUPPORT="no"
-#fi
-
 export DNS_SERVERS=$(echo "${DNS_SERVERS}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
 # Check DNS_SERVERS env var
 if [[ ! -z "${DNS_SERVERS}" ]]; then
@@ -77,6 +68,14 @@ if [[ ! -z "${SPLIT_DNS_DOMAINS}" ]]; then
 	fi
 fi
 
+export CERTGEN=$(echo "${CERTGEN}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
+# Check CERTGEN env var
+if [[ ! -z "${CERTGEN}" ]]; then
+	echo "$(date) [info] CERTGEN defined as '${CERTGEN}'"
+else
+	echo "$(date) [warn] CERTGEN not defined (via -e CERTGEN), defaulting to selfsigned"
+	export CERTGEN="selfsigned"
+fi
 
 ##### Process Variables #####
 if [ ${LISTEN_PORT} != "4443" ]; then
@@ -132,20 +131,6 @@ elif [[ ${TUNNEL_MODE} == "split-include" ]]; then
 	fi
 fi
 
-# Process PROXY_SUPPORT env var
-#if [[ ${POWER_USER} == "yes" ]]; then
-#	echo "$(date) Power user! Proxy support not being written to ocserv.conf, you must manually modify the conf file yourself!"
-#else
-#	if [[ $PROXY_SUPPORT == "yes" ]]; then
-#		echo "$(date) Enabling proxy support"
-#		sed -i 's/^#listen-proxy-proto/listen-proxy-proto/' /config/ocserv.conf
-#		sed -i 's/^#listen-clear-file/listen-clear-file/' /config/ocserv.conf
-#	else
-#		sed -i 's/^listen-proxy-proto/#listen-proxy-proto/' /config/ocserv.conf
-#		sed -i 's/^listen-clear-file/#listen-clear-file/' /config/ocserv.conf
-#	fi
-#fi
-
 # Add DNS_SERVERS to ocserv conf
 if [[ ${POWER_USER} == "yes" ]]; then
 	echo "$(date) [warn] Power user! DNS servers are not being written to ocserv.conf, you must manually modify the conf file yourself!"
@@ -189,7 +174,7 @@ if [[ ! -z "${SPLIT_DNS_DOMAINS}" ]]; then
 fi
 
 ##### Generate certs if none exist #####
-if [ ! -f /config/certs/server-key.pem ] || [ ! -f /config/certs/server-cert.pem ]; then
+if [[ ${CERTGEN} == "selfsigned" ]]; then
 	# No certs found
 	echo "$(date) [info] No certificates were found, creating them from provided or default values"
 	
@@ -243,6 +228,17 @@ if [ ! -f /config/certs/server-key.pem ] || [ ! -f /config/certs/server-cert.pem
 	tls_www_server
 	EOSRV
 	certtool --generate-certificate --load-privkey server-key.pem --load-ca-certificate ca.pem --load-ca-privkey ca-key.pem --template server.tmpl --outfile server-cert.pem
+elif [[ ${CERTGEN} == "letsencrypt" ]]; then
+    if [ ! -f "/config/le/live/${LE_DOMAIN}/cert.pem" ]; then
+	#certbot certonly --config-dir /config/le --email ${LE_EMAIL} --agree-tos --no-eff-email --force-renewal --staging --standalone -d ${LE_DOMAIN}
+	certbot certonly --config-dir /config/le --email ${LE_EMAIL} --agree-tos --no-eff-email --force-renewal --standalone -d ${LE_DOMAIN}
+	mkdir -p /config/certs
+	cd /config/certs
+	ln -s ../le/live/${LE_DOMAIN}/cert.pem server-cert.pem
+	ln -s ../le/live/${LE_DOMAIN}/privkey.pem server-key.pem
+    else
+	certbot renew --config-dir /config/le
+    fi
 else
 	echo "$(date) [info] Using existing certificates in /config/certs"
 fi

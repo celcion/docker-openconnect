@@ -1,0 +1,25 @@
+version: "3.4"
+
+services:
+  ocserv:
+    image: ocserv:latest
+    container_name: ocserv
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DNS_SERVERS: "8.8.8.8,8.8.4.4"
+      TUNNEL_MODE: "split-include"
+      TUNNEL_ROUTES: "192.168.1.0/24"
+      CERTGEN: "letsencrypt"
+      LE_EMAIL: "admin@example.com"
+      LE_DOMAIN: "example.com"
+    volumes:
+      - "./config:/config"
+    ports:
+      - "80:80/tcp"
+      - "443:4443/tcp"
+      - "443:4443/udp"

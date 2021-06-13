@@ -1,7 +1,7 @@
 FROM alpine:latest
 
-MAINTAINER MarkusMcNugen
-# Forked from TommyLau for unRAID
+MAINTAINER celcion
+# Forked from MarkusMcNugen
 
 VOLUME /config
 
@@ -58,7 +58,7 @@ RUN buildDeps=" \
 				| xargs -r apk info --installed \
 				| sort -u \
 			)" \
-	&& apk add --update --virtual .run-deps $runDeps gnutls-utils iptables \
+	&& apk add --update --virtual .run-deps $runDeps gnutls-utils iptables lz4 lz4-libs libseccomp certbot \
 	&& apk del .build-deps \
 	&& rm -rf /var/cache/apk/* 
 	
@@ -74,6 +74,7 @@ WORKDIR /config
 COPY docker-entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
+EXPOSE 80
 EXPOSE 4443
 EXPOSE 4443/udp
 CMD ["ocserv", "-c", "/config/ocserv.conf", "-f"]
