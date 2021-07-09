@@ -91,6 +91,11 @@ if [ ${LISTEN_PORT} != "4443" ]; then
 	fi
 fi
 
+cidr_to_netmask() {
+    value=$(( 0xffffffff ^ ((1 << (32 - $1)) - 1) ))
+    echo "$(( (value >> 24) & 0xff )).$(( (value >> 16) & 0xff )).$(( (value >> 8) & 0xff )).$(( value & 0xff ))"
+}
+
 if [[ ${TUNNEL_MODE} == "all" ]]; then
 	echo "$(date) [info] Tunneling all traffic through VPN"
 	if [[ ${POWER_USER} == "yes" ]]; then
@@ -111,17 +116,14 @@ elif [[ ${TUNNEL_MODE} == "split-include" ]]; then
 			tunnel_route_item=$(echo "${tunnel_route_item}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
 			IFS='/' read -ra ip_subnet_list <<< "${tunnel_route_item}"
 			STRLENGTH=$(echo -n ${ip_subnet_list[1]} | wc -m)
+			IP=${ip_subnet_list[0]}
 			if [[ $STRLENGTH > "2" ]]; then
 				echo "$(date) [info] Full subnet mask detected in route ${tunnel_route_item}"
-				IP=$(sipcalc ${ip_subnet_list[0]} ${ip_subnet_list[1]} | awk '/Host address/ {print $4; exit}')
-				NETMASK=$(sipcalc ${ip_subnet_list[0]} ${ip_subnet_list[1]} | awk '/Network mask/ {print $4; exit}')
+				NETMASK=${ip_subnet_list[1]}
 			else
 				echo "$(date) [info] CIDR submet mask detected in route ${tunnel_route_item}"
-				IP=$(ipcalc -b ${tunnel_route_item} | awk '/Address/ {print $2}')
-				NETMASK=$(ipcalc -b ${tunnel_route_item} | awk '/Netmask/ {print $2}')
+				NETMASK=$(cidr_to_netmask ${ip_subnet_list[1]})
 			fi
-			#IP=$(ipcalc -b ${tunnel_route_item} | awk '/Address/ {print $2; exit}')
-			#NETMASK=$(ipcalc -b ${tunnel_route_item} | awk '/Netmask/ {print $2; exit}')
 			TUNDUP=$(cat /config/ocserv.conf | grep "route=${IP}/${NETMASK}")
 			if [[ -z "$TUNDUP" ]]; then
 				echo "$(date) [info] Adding route=$IP/$NETMASK to ocserv.conf"

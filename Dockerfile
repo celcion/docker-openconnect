@@ -58,11 +58,11 @@ RUN buildDeps=" \
 				| xargs -r apk info --installed \
 				| sort -u \
 			)" \
-	&& apk add --update --virtual .run-deps $runDeps gnutls-utils iptables lz4 lz4-libs libseccomp certbot \
+	&& apk add --update --virtual .run-deps $runDeps gnutls-utils iptables \
 	&& apk del .build-deps \
 	&& rm -rf /var/cache/apk/* 
 	
-RUN apk add --update bash rsync ipcalc sipcalc ca-certificates rsyslog logrotate runit \
+RUN apk add --update bash rsync ca-certificates rsyslog logrotate runit lz4 lz4-libs libseccomp certbot \
 	&& rm -rf /var/cache/apk/* 
 
 RUN update-ca-certificates
