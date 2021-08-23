@@ -62,7 +62,7 @@ RUN buildDeps=" \
 	&& apk del .build-deps \
 	&& rm -rf /var/cache/apk/* 
 	
-RUN apk add --update bash rsync ca-certificates rsyslog logrotate runit lz4 lz4-libs libseccomp certbot \
+RUN apk add --update bash rsync ca-certificates rsyslog logrotate runit lz4 lz4-libs libseccomp certbot libnl3 \
 	&& rm -rf /var/cache/apk/* 
 
 RUN update-ca-certificates
